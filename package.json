@@ -1,0 +1,11 @@
+{
+  "name": "hexfog",
+  "version": "1.1.0",
+  "description": "Hex map fog of war tool",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
