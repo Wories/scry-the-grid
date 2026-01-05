@@ -1,5 +1,5 @@
 import { App } from './state.js';
-import { el } from './dom.js';
+import { el, ctxDraw } from './dom.js';
 import { getGridIndex } from './math.js';
 import { requestRender, renderPatch, updateTransform, renderGridOnly, renderFull } from './render.js';
 
@@ -7,6 +7,7 @@ const Input = {
     pointers: new Map(),
     startView: null, startGrid: null,
     startDist: 0, startCenter: null,
+    lastDrawPos: null, // [x, y] for drawing interpolation
 
     // Helpers
     getCenter: () => {
@@ -37,10 +38,37 @@ export function setupEventListeners() {
         Input.startView = { ...App.view };
         Input.startGrid = { ...App.grid };
 
-        // INSTANT PAINT
+        // INSTANT PAINT / DRAW START
         if (App.mode === 'play' && Input.pointers.size === 1) {
             if (App.tool === 'reveal' || App.tool === 'hide') {
                 performHit(e.clientX, e.clientY);
+            } else if (App.tool === 'pen' || App.tool === 'eraser') {
+                const w = Input.toWorld(e.clientX, e.clientY);
+                Input.lastDrawPos = [w.x, w.y];
+
+                // Configure Context
+                ctxDraw.lineCap = 'round';
+                ctxDraw.lineJoin = 'round';
+
+                // Use correct size based on tool
+                const size = (App.tool === 'eraser') ? App.drawing.eraserSize : App.drawing.penSize;
+                ctxDraw.lineWidth = size;
+
+                if (App.tool === 'eraser') {
+                    ctxDraw.globalCompositeOperation = 'destination-out';
+                } else {
+                    ctxDraw.globalCompositeOperation = 'source-over';
+                    ctxDraw.strokeStyle = App.drawing.color;
+                    ctxDraw.globalAlpha = App.drawing.opacity;
+                }
+
+                ctxDraw.beginPath();
+                ctxDraw.moveTo(w.x, w.y);
+                ctxDraw.lineTo(w.x, w.y); // Dot
+                ctxDraw.stroke();
+
+                // Update Cursor immediately for feedback
+                updateCursor(e.clientX, e.clientY, size);
             }
         }
 
@@ -70,9 +98,20 @@ export function setupEventListeners() {
                     App.view.x = Input.startView.x + dx;
                     App.view.y = Input.startView.y + dy;
                     updateTransform();
-                } else {
-                    // Drag Paint
+                } else if (App.tool === 'reveal' || App.tool === 'hide') {
+                    // Drag Paint Fog
                     performHit(p.x, p.y);
+                } else if (App.tool === 'pen' || App.tool === 'eraser') {
+                    // Drag Draw
+                    const w = Input.toWorld(e.clientX, e.clientY);
+
+                    if (Input.lastDrawPos) {
+                        ctxDraw.beginPath();
+                        ctxDraw.moveTo(Input.lastDrawPos[0], Input.lastDrawPos[1]);
+                        ctxDraw.lineTo(w.x, w.y);
+                        ctxDraw.stroke();
+                    }
+                    Input.lastDrawPos = [w.x, w.y];
                 }
             } else {
                 // Align: Pan Grid
@@ -86,6 +125,14 @@ export function setupEventListeners() {
             const scale = (Input.startDist > 0) ? currDist / Input.startDist : 1;
             handlePinch(scale, Input.startCenter, currCenter);
         }
+
+        // Always update cursor hover position if pen/eraser active
+        if (App.tool === 'pen' || App.tool === 'eraser') {
+            const size = (App.tool === 'eraser') ? App.drawing.eraserSize : App.drawing.penSize;
+            updateCursor(e.clientX, e.clientY, size);
+        } else {
+            el.brushCursor.style.display = 'none';
+        }
     });
 
     el.viewport.addEventListener('pointerup', e => {
@@ -97,6 +144,9 @@ export function setupEventListeners() {
             Input.startView = { ...App.view };
             Input.startGrid = { ...App.grid };
         }
+
+        Input.lastDrawPos = null; // Reset draw state
+
         if (App.mode === 'align') renderFull();
     });
 
@@ -178,4 +228,13 @@ function performHit(clientX, clientY) {
             changed = true;
         }
     }
+}
+
+function updateCursor(x, y, size) {
+    el.brushCursor.style.display = 'block';
+    el.brushCursor.style.left = x + 'px';
+    el.brushCursor.style.top = y + 'px';
+    const screenW = size * App.view.scale;
+    el.brushCursor.style.width = screenW + 'px';
+    el.brushCursor.style.height = screenW + 'px';
 }

@@ -70,6 +70,15 @@ body {
     pointer-events: none;
 }
 
+#layer-draw {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 4;
+    pointer-events: none;
+    /* Input handled by viewport wrapper */
+}
+
 /* --- UI --- */
 #ui-layer {
     position: fixed;
@@ -211,6 +220,67 @@ label.icon-btn {
     color: #000;
 }
 
+/* SUB TOOLBAR */
+.sub-toolbar {
+    position: absolute;
+    bottom: 90px;
+    /* Above main toolbar */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    background: rgba(20, 20, 20, 0.85);
+    padding: 8px 15px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid #444;
+    pointer-events: auto;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 9999;
+}
+
+.sub-toolbar.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.color-swatch.active {
+    border-color: #fff;
+    transform: scale(1.1);
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+#brush-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    display: none;
+    box-shadow: 0 0 2px #000;
+}
+
 .align-hud {
     position: absolute;
     bottom: 30px;
@@ -243,6 +313,8 @@ label.icon-btn {
     display: flex;
     flex-direction: column;
     box-shadow: -5px 0 30px rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    /* Ensure it stays on top */
 }
 
 #settings-menu.open {

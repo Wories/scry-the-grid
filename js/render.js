@@ -106,5 +106,7 @@ export function resizeWorld(w, h) {
     el.canvasFog.height = h;
     el.canvasGrid.width = w;
     el.canvasGrid.height = h;
+    el.canvasDraw.width = w;
+    el.canvasDraw.height = h;
     requestRender();
 }

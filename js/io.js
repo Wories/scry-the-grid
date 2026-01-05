@@ -52,6 +52,12 @@ export function setupIO(centerCameraFunc) {
             }
         }
 
+        // 3. Drawing
+        try {
+            const drawBlob = await new Promise(resolve => el.canvasDraw.toBlob(resolve));
+            if (drawBlob) zip.file("draw.png", drawBlob);
+        } catch (e) { console.error("Failed to save drawing layer:", e); }
+
         // 3. Generate
         try {
             const content = await zip.generateAsync({ type: "blob" });
@@ -103,6 +109,9 @@ export function setupIO(centerCameraFunc) {
 
         // 3. Grid
         ctx.drawImage(el.canvasGrid, 0, 0);
+
+        // 4. Drawing
+        ctx.drawImage(el.canvasDraw, 0, 0);
 
         const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         const filename = `${App.name}_${ts}.webp`;
@@ -194,12 +203,23 @@ async function loadZipProject(f) {
             document.dispatchEvent(new CustomEvent('state-updated'));
         }
 
-        // Fog
         if (zip.file("fog.png")) {
             const blob = await zip.file("fog.png").async("blob");
             App.fogMapBlob = blob; // Store Blob!
             App.fogImage.src = URL.createObjectURL(blob);
             App.fogImage.onload = () => renderFull();
+        }
+
+        // Drawing
+        if (zip.file("draw.png")) {
+            const blob = await zip.file("draw.png").async("blob");
+            const img = new Image();
+            img.onload = () => {
+                const ctx = el.canvasDraw.getContext('2d');
+                ctx.clearRect(0, 0, el.canvasDraw.width, el.canvasDraw.height);
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = URL.createObjectURL(blob);
         }
 
         alert('Project Loaded');
