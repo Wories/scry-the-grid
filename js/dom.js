@@ -5,12 +5,25 @@ export const el = {
     canvasFog: document.getElementById('layer-fog'),
     canvasGrid: document.getElementById('layer-grid'),
 
-    // tabs: { ... }  <-- Removed
-    tools: { pan: document.getElementById('tool-pan'), reveal: document.getElementById('tool-reveal'), hide: document.getElementById('tool-hide') },
-    panels: { play: document.getElementById('play-toolbar'), align: document.getElementById('align-hud'), menu: document.getElementById('settings-menu'), overlay: document.getElementById('overlay') },
+    // Tools Buttons
+    tools: { 
+        pan: document.getElementById('tool-pan'), 
+        reveal: document.getElementById('tool-reveal'), 
+        hide: document.getElementById('tool-hide') 
+    },
+    
+    // UI Panels
+    panels: { 
+        play: document.getElementById('play-toolbar'), 
+        align: document.getElementById('align-hud'), 
+        menu: document.getElementById('settings-menu'), 
+        overlay: document.getElementById('overlay') 
+    },
+    
+    // Inputs
     inputs: {
         name: document.getElementById('inp-project-name'),
-        alignToggle: document.getElementById('btn-align-toggle'), // Must match ID in index.html
+        alignToggle: document.getElementById('btn-align-toggle'), // Matches the new ID in settings
         shape: document.getElementById('inp-shape'),
         sizeRange: document.getElementById('inp-size-range'),
         sizeNum: document.getElementById('inp-size-num'),

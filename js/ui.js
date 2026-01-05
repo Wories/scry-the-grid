@@ -7,24 +7,25 @@ let _resetCameraStr = null;
 export function setupUI(resetCamFunc) {
     _resetCameraStr = resetCamFunc;
 
-    // Align Toggle in Settings (with safety check)
+    // --- 1. SETTINGS & ALIGNMENT ---
+    // Safely check if the align button exists before attaching events
     if (el.inputs.alignToggle) {
         el.inputs.alignToggle.onclick = () => {
             if (App.mode === 'play') {
                 setMode('align');
-                toggleMenu(); // Auto close menu to start aligning
+                toggleMenu(); // Auto close menu to see the grid
             } else {
                 setMode('play');
             }
         };
     }
 
-    // Tools
+    // --- 2. TOOLBAR TOOLS ---
     if (el.tools.pan) el.tools.pan.onclick = () => setTool('pan');
     if (el.tools.reveal) el.tools.reveal.onclick = () => setTool('reveal');
     if (el.tools.hide) el.tools.hide.onclick = () => setTool('hide');
 
-    // Menu
+    // --- 3. MENUS & OVERLAYS ---
     const closeBtn = el.panels.menu.querySelector('#btn-close-menu');
     if (closeBtn) closeBtn.onclick = toggleMenu;
     
@@ -36,13 +37,18 @@ export function setupUI(resetCamFunc) {
 
     if (el.panels.overlay) el.panels.overlay.onclick = toggleMenu;
 
-    // Inputs
+    // --- 4. INPUTS ---
+    // Project Name
     if (el.inputs.name) {
         el.inputs.name.oninput = (e) => { App.name = e.target.value || "New Project"; };
     }
     
-    if (el.inputs.shape) el.inputs.shape.onchange = (e) => { App.grid.type = e.target.value; requestRender(); };
+    // Grid Shape
+    if (el.inputs.shape) {
+        el.inputs.shape.onchange = (e) => { App.grid.type = e.target.value; requestRender(); };
+    }
 
+    // Grid Size
     if (el.inputs.sizeRange) {
         el.inputs.sizeRange.oninput = (e) => {
             App.grid.size = parseFloat(e.target.value);
@@ -50,7 +56,6 @@ export function setupUI(resetCamFunc) {
             requestRender();
         };
     }
-
     if (el.inputs.sizeNum) {
         el.inputs.sizeNum.oninput = (e) => {
             let v = parseFloat(e.target.value);
@@ -62,6 +67,7 @@ export function setupUI(resetCamFunc) {
         };
     }
 
+    // Grid Ratio
     if (el.inputs.ratioRange) {
         el.inputs.ratioRange.oninput = (e) => {
             App.grid.ratio = parseFloat(e.target.value);
@@ -69,7 +75,6 @@ export function setupUI(resetCamFunc) {
             requestRender();
         };
     }
-
     if (el.inputs.ratioNum) {
         el.inputs.ratioNum.oninput = (e) => {
             let v = parseFloat(e.target.value);
@@ -81,13 +86,14 @@ export function setupUI(resetCamFunc) {
         };
     }
 
+    // Opacities
     if (el.inputs.gridOp) el.inputs.gridOp.oninput = (e) => { App.grid.opacity = parseFloat(e.target.value); requestRender(); };
     if (el.inputs.fogOp) el.inputs.fogOp.oninput = (e) => { App.fog.opacity = parseFloat(e.target.value); requestRender(); };
 
-    // Listen for external state updates
+    // --- 5. STATE UPDATES ---
     document.addEventListener('state-updated', updateUIFields);
     
-    // Initial UI Update
+    // Initial Run
     updateUIFields();
 }
 
@@ -118,6 +124,7 @@ function toggleMenu() {
 }
 
 export function updateUIFields() {
+    // Safely update values only if elements exist
     if (el.inputs.name) el.inputs.name.value = App.name;
     if (el.inputs.shape) el.inputs.shape.value = App.grid.type;
     if (el.inputs.sizeRange) el.inputs.sizeRange.value = App.grid.size;
@@ -126,7 +133,7 @@ export function updateUIFields() {
     if (el.inputs.ratioNum) el.inputs.ratioNum.value = App.grid.ratio;
     if (el.inputs.gridOp) el.inputs.gridOp.value = App.grid.opacity;
 
-    // Update Align Button Text (Safety Check)
+    // Update the "Unlock Grid" button text/color
     if (el.inputs.alignToggle) {
         if (App.mode === 'align') {
             el.inputs.alignToggle.innerText = "Done / Lock Grid (Return to Play)";
@@ -139,7 +146,7 @@ export function updateUIFields() {
         }
     }
 
-    // Toggle Load/Export buttons
+    // Toggle Load/Export Buttons in Toolbar
     const btnLoad = document.getElementById('tool-load-bar');
     const btnExport = document.getElementById('btn-export-png');
     
