@@ -10,7 +10,7 @@ export const el = {
     panels: { play: document.getElementById('play-toolbar'), align: document.getElementById('align-hud'), menu: document.getElementById('settings-menu'), overlay: document.getElementById('overlay') },
     inputs: {
         name: document.getElementById('inp-project-name'),
-        alignToggle: document.getElementById('btn-align-toggle'), // <-- New
+        alignToggle: document.getElementById('btn-align-toggle'), // Must match ID in index.html
         shape: document.getElementById('inp-shape'),
         sizeRange: document.getElementById('inp-size-range'),
         sizeNum: document.getElementById('inp-size-num'),
