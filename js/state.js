@@ -19,8 +19,15 @@ export const App = {
     view: { x: 0, y: 0, scale: 1.0 },
 
     width: 1920, height: 1080, // Default canvas size until image loaded
+    
+    // Images
     fogImage: new Image(),
     baseImageLoaded: false,
+    
+    // NEW: Store the actual file data to ensure reliable saving on mobile
+    baseMapBlob: null, 
+    fogMapBlob: null,
+
     isReady: false,
 
     // Performance

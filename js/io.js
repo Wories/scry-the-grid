@@ -25,46 +25,62 @@ export function setupIO(centerCameraFunc) {
         };
         zip.file("data.json", JSON.stringify(data));
 
-        // 2. Images
-        if (el.baseImg.naturalWidth > 0 && el.baseImg.src) {
-            try {
-                const blob = await fetch(el.baseImg.src).then(r => r.blob());
-                zip.file("base.png", blob);
-            } catch (e) { console.error(e); }
-        }
-        if (App.fogImage.naturalWidth > 0 && App.fogImage.src) {
-            try {
-                const blob = await fetch(App.fogImage.src).then(r => r.blob());
-                zip.file("fog.png", blob);
-            } catch (e) { console.error(e); }
-        }
-
-        // 3. Generate
-        const content = await zip.generateAsync({ type: "blob" });
-
-        // Smart Save (File System Access API)
-        if (window.showSaveFilePicker) {
-            try {
-                const handle = await window.showSaveFilePicker({
-                    suggestedName: `${App.name}.hfog`,
-                    types: [{ description: 'HexFog Project', accept: { 'application/zip': ['.hfog'] } }],
-                });
-                const writable = await handle.createWritable();
-                await writable.write(content);
-                await writable.close();
-                return;
-            } catch (err) {
-                // User cancelled or error
-                return;
+        // 2. Images (Use stored Blobs if available, fallback to fetch)
+        if (App.baseImageLoaded) {
+            if (App.baseMapBlob) {
+                // Reliable path for mobile
+                zip.file("base.png", App.baseMapBlob);
+            } else if (el.baseImg.src) {
+                // Fallback path
+                try {
+                    const blob = await fetch(el.baseImg.src).then(r => r.blob());
+                    zip.file("base.png", blob);
+                } catch (e) { console.error("Failed to fetch base map:", e); }
             }
         }
 
-        // Fallback Download
-        const url = URL.createObjectURL(content);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${App.name}.hfog`;
-        a.click();
+        if (App.fogImage.naturalWidth > 0) {
+            if (App.fogMapBlob) {
+                // Reliable path for mobile
+                zip.file("fog.png", App.fogMapBlob);
+            } else if (App.fogImage.src) {
+                // Fallback path
+                try {
+                    const blob = await fetch(App.fogImage.src).then(r => r.blob());
+                    zip.file("fog.png", blob);
+                } catch (e) { console.error("Failed to fetch fog map:", e); }
+            }
+        }
+
+        // 3. Generate
+        try {
+            const content = await zip.generateAsync({ type: "blob" });
+
+            // Smart Save (File System Access API)
+            if (window.showSaveFilePicker) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: `${App.name}.hfog`,
+                        types: [{ description: 'HexFog Project', accept: { 'application/zip': ['.hfog'] } }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(content);
+                    await writable.close();
+                    return;
+                } catch (err) { return; } // User cancelled
+            }
+
+            // Fallback Download
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${App.name}.hfog`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 10000); // Cleanup
+        } catch (err) {
+            console.error("Zip generation failed:", err);
+            alert("Failed to create project file. See console.");
+        }
     };
 
     // Export Image (WebP)
@@ -97,6 +113,7 @@ export function setupIO(centerCameraFunc) {
             a.href = url;
             a.download = filename;
             a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         }, 'image/webp', 0.9);
     };
 
@@ -116,6 +133,7 @@ export function setupIO(centerCameraFunc) {
     document.getElementById('file-base').onchange = (e) => {
         const f = e.target.files[0];
         if (f) {
+            App.baseMapBlob = f; // Store Blob!
             const url = URL.createObjectURL(f);
             el.baseImg.onload = () => {
                 resizeWorld(el.baseImg.naturalWidth, el.baseImg.naturalHeight);
@@ -124,6 +142,7 @@ export function setupIO(centerCameraFunc) {
             };
             el.baseImg.src = url;
             App.baseImageLoaded = true;
+            document.dispatchEvent(new CustomEvent('state-updated'));
         }
         e.target.value = '';
     };
@@ -131,6 +150,7 @@ export function setupIO(centerCameraFunc) {
     document.getElementById('file-fog').onchange = (e) => {
         const f = e.target.files[0];
         if (f) {
+            App.fogMapBlob = f; // Store Blob!
             const url = URL.createObjectURL(f);
             App.fogImage.onload = () => renderFull();
             App.fogImage.src = url;
@@ -164,17 +184,20 @@ async function loadZipProject(f) {
         // Base
         if (zip.file("base.png")) {
             const blob = await zip.file("base.png").async("blob");
+            App.baseMapBlob = blob; // Store Blob!
             el.baseImg.src = URL.createObjectURL(blob);
             el.baseImg.onload = () => {
                 resizeWorld(el.baseImg.naturalWidth, el.baseImg.naturalHeight);
                 renderFull();
             };
             App.baseImageLoaded = true;
+            document.dispatchEvent(new CustomEvent('state-updated'));
         }
 
         // Fog
         if (zip.file("fog.png")) {
             const blob = await zip.file("fog.png").async("blob");
+            App.fogMapBlob = blob; // Store Blob!
             App.fogImage.src = URL.createObjectURL(blob);
             App.fogImage.onload = () => renderFull();
         }

@@ -1,19 +1,23 @@
 import { App } from './state.js';
 import { el } from './dom.js';
 import { requestRender, renderFull, renderGridOnly } from './render.js';
-// import { resetCamera } from './main.js'; // Removed to fix circular dep and undefined export
-
-// To solve circular ref from main->ui->main:
-// We will assign resetCamera later or pass it in setupUI
 
 let _resetCameraStr = null;
 
 export function setupUI(resetCamFunc) {
     _resetCameraStr = resetCamFunc;
 
-    // Tabs
-    el.tabs.play.onclick = () => setMode('play');
-    el.tabs.align.onclick = () => setMode('align');
+    // Removed Tab Listeners
+    
+    // Align Toggle in Settings
+    el.inputs.alignToggle.onclick = () => {
+        if (App.mode === 'play') {
+            setMode('align');
+            toggleMenu(); // Auto close menu to start aligning
+        } else {
+            setMode('play');
+        }
+    };
 
     // Tools
     el.tools.pan.onclick = () => setTool('pan');
@@ -27,6 +31,8 @@ export function setupUI(resetCamFunc) {
     el.panels.overlay.onclick = toggleMenu;
 
     // Inputs
+    el.inputs.name.oninput = (e) => { App.name = e.target.value || "New Project"; };
+
     el.inputs.shape.onchange = (e) => { App.grid.type = e.target.value; requestRender(); };
 
     el.inputs.sizeRange.oninput = (e) => {
@@ -62,14 +68,14 @@ export function setupUI(resetCamFunc) {
     el.inputs.gridOp.oninput = (e) => { App.grid.opacity = parseFloat(e.target.value); requestRender(); };
     el.inputs.fogOp.oninput = (e) => { App.fog.opacity = parseFloat(e.target.value); requestRender(); };
 
-    // Listen for external state updates (e.g. from IO)
+    // Listen for external state updates
     document.addEventListener('state-updated', updateUIFields);
+    updateUIFields();
 }
 
 function setMode(m) {
     App.mode = m;
-    el.tabs.play.classList.toggle('active', m === 'play');
-    el.tabs.align.classList.toggle('active', m === 'align');
+    // Removed el.tabs references
 
     if (m === 'play') {
         el.panels.play.classList.remove('hidden');
@@ -78,6 +84,7 @@ function setMode(m) {
         el.panels.play.classList.add('hidden');
         el.panels.align.classList.add('visible');
     }
+    updateUIFields(); // Update button text
     requestRender();
 }
 
@@ -101,5 +108,31 @@ export function updateUIFields() {
     el.inputs.ratioRange.value = App.grid.ratio;
     el.inputs.ratioNum.value = App.grid.ratio;
     el.inputs.gridOp.value = App.grid.opacity;
+
+    // Update Align Button Text
+    if (App.mode === 'align') {
+        el.inputs.alignToggle.innerText = "Done / Lock Grid (Return to Play)";
+        el.inputs.alignToggle.style.borderColor = "#00bcd4";
+        el.inputs.alignToggle.style.color = "#00bcd4";
+    } else {
+        el.inputs.alignToggle.innerText = "Unlock Grid (Enter Align Mode)";
+        el.inputs.alignToggle.style.borderColor = "#555";
+        el.inputs.alignToggle.style.color = "white";
+    }
+
+    // Toggle Load/Export buttons
+    const btnLoad = document.getElementById('tool-load-bar');
+    const btnExport = document.getElementById('btn-export-png');
+    
+    if (btnLoad && btnExport) {
+        if (App.baseImageLoaded) {
+            btnLoad.style.display = 'none';
+            btnExport.style.display = 'flex';
+        } else {
+            btnLoad.style.display = 'flex';
+            btnExport.style.display = 'none';
+        }
+    }
+
     requestRender();
 }

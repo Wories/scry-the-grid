@@ -5,11 +5,12 @@ export const el = {
     canvasFog: document.getElementById('layer-fog'),
     canvasGrid: document.getElementById('layer-grid'),
 
-    tabs: { play: document.getElementById('tab-play'), align: document.getElementById('tab-align') },
+    // tabs: { ... }  <-- Removed
     tools: { pan: document.getElementById('tool-pan'), reveal: document.getElementById('tool-reveal'), hide: document.getElementById('tool-hide') },
     panels: { play: document.getElementById('play-toolbar'), align: document.getElementById('align-hud'), menu: document.getElementById('settings-menu'), overlay: document.getElementById('overlay') },
     inputs: {
         name: document.getElementById('inp-project-name'),
+        alignToggle: document.getElementById('btn-align-toggle'), // <-- New
         shape: document.getElementById('inp-shape'),
         sizeRange: document.getElementById('inp-size-range'),
         sizeNum: document.getElementById('inp-size-num'),
